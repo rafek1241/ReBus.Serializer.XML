@@ -39,7 +39,7 @@ jobs:
       - name: Test
         run: dotnet test -c Release
       - name: Pack
-        run: dotnet pack -v normal -c Release --no-restore --include-symbols --include-source -p:PackageVersion=$GITHUB_RUN_ID src/$PROJECT_NAME/$PROJECT_NAME.csproj
+        run: dotnet pack -v normal -c Release --no-restore --include-symbols --include-source -p:PackageVersion=$GITHUB_RUN_ID src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:

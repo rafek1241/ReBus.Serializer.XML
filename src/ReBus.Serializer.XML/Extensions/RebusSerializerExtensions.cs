@@ -6,14 +6,17 @@ namespace ReBus.Serializer.XML.Extensions
 {
     public static class RebusSerializerExtensions
     {
-        public static void UseXmlSerializing(this StandardConfigurer<ISerializer> configurer)
+        public static XmlSerializer UseXmlSerializing(this StandardConfigurer<ISerializer> configurer, XmlSerializingOptions options = null)
         {
             if (configurer == null)
             {
                 throw new ArgumentNullException(nameof(configurer));
             }
 
-            configurer.Register(r=> new XmlSerializer());
+            var instance = new XmlSerializer(options ?? new XmlSerializingOptions());
+            configurer.Register(r=> instance);
+            
+            return instance;
         }
     }
 }

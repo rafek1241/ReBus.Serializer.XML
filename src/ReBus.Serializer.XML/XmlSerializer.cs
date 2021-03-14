@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Rebus.Bus;
+using Rebus.Extensions;
 using Rebus.Messages;
 using Rebus.Serialization;
 using ReBus.Serializer.XML.Exceptions;
@@ -92,8 +93,34 @@ namespace ReBus.Serializer.XML
             var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
             xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
 
+            if (_options.IncludeBaseTypeNamespaces)
+            {
+                IncludeBaseTypesInElement(xmlWriter, messageType);
+            }
+
             xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
             xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+        }
+
+        private void IncludeBaseTypesInElement(XmlTextWriter xmlWriter, Type messageType)
+        {
+            var baseTypes = messageType
+                .GetBaseTypes()
+                .Where(x => x != typeof(object))
+                .ToArray();
+
+            var firstBaseType = baseTypes.FirstOrDefault();
+            if (firstBaseType == null)
+            {
+                return;
+            }
+
+            xmlWriter.WriteAttributeString($"xmlns:{_options.BaseTypeNamespaceAttributeName}", firstBaseType.FullName!);
+
+            for (var i = 1; i < baseTypes.Length; i++)
+            {
+                xmlWriter.WriteAttributeString($"xmlns:{_options.BaseTypeNamespaceAttributeName}{i}", baseTypes[i].FullName!);
+            }
         }
 
         private string DefineNamespaceOfMessage(Message message, Type messageType)

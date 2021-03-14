@@ -1,5 +1,9 @@
 name: .NET Core
 on:
+  # push:
+  #   branches: [ master ]
+  # pull_request:
+  #   branches: [ master ]
   push:
   pull_request:
   release:
@@ -32,14 +36,25 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.x'
+      # auto tag
+      - name: Github auto tagger
+        uses: VegetableGarden/beet@0.0.3
+        with:
+          # The tag major version
+          major-version: 0 # optional, default is 0
+          # The tag minor version
+          minor-version: 0 # optional, default is 0
       - name: Restore
         run: dotnet restore
       - name: Build
         run: dotnet build -c Release --no-restore
       - name: Test
         run: dotnet test -c Release
+      - name: GetVersion
+        id: version
+        uses: battila7/get-version-action@v2
       - name: Pack
-        run: dotnet pack -v normal -c Release -p:PackageVersion=$GITHUB_RUN_ID src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
+        run: dotnet pack -v normal -c Release --no-restore --no-build --include-symbols --include-source -p:PackageVersion=${{ steps.version.outputs.version-without-v }} src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:

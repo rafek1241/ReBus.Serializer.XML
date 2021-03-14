@@ -1,5 +1,7 @@
 # XML Serializer for ReBus
 
+[![.NET Core](https://github.com/rafek1241/ReBus.Serializer.XML/actions/workflows/dotnet.yml/badge.svg)](https://github.com/rafek1241/ReBus.Serializer.XML/actions/workflows/dotnet.yml)
+
 ## Why it was created?
 
 To make transition from NServiceBus MSMQ to ReBus as much painless as possible.

@@ -67,12 +67,13 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: nupkg
-      - name: Push to GitHub Feed
-        run: |
-          for f in ./nupkg/*.nupkg
-          do
-            curl -vX PUT -u "$GITHUB_USER:$GITHUB_TOKEN" -F package=@$f $GITHUB_FEED
-          done
+      - name: Upload package to github feed
+        uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
+        with:
+          nupkg-path:  './nupkg/*.nupkg'
+          repo-owner:  'rafek1241'
+          gh-user:  'rafek1241'
+          token:  ${{ secrets.GITHUB_TOKEN }}
   deploy:
     needs: build
     if: github.event_name == 'release'

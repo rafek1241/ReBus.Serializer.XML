@@ -4,10 +4,12 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Xunit;
 using Newtonsoft.Json;
 using Rebus.Messages;
 using ReBus.Serializer.XML.UnitTests.Messages;
+using ReBus.Serializer.XML.UnitTests.Messages.BaseTypes;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,23 +18,26 @@ namespace ReBus.Serializer.XML.UnitTests
     public class XmlSerializerTests
     {
         private readonly Fixture _fixture;
-        private readonly XmlSerializer _sut;
+        private XmlSerializer Sut
+        {
+            get
+            {
+                var serializer = new XmlSerializer(_options);
+                serializer.WithLogging(_logger);
+                return serializer;
+            }
+        }
 
-        private readonly XmlSerializingOptions _options;
+        private XmlSerializingOptions _options;
+        private readonly ILogger _logger;
 
         public XmlSerializerTests(ITestOutputHelper outputHelper)
         {
             _fixture = new Fixture();
-            _options = new XmlSerializingOptions()
-            {
-                IncludeNamespace = true
-            };
-            
-            var logger = new XunitLoggerProvider(outputHelper)
+            _options = new XmlSerializingOptions();
+            _logger = new XunitLoggerProvider(outputHelper)
                 .CreateLogger(nameof(XmlSerializerTests));
 
-            _sut = new XmlSerializer(_options);
-            _sut.WithLogging(logger);
         }
 
         [Fact]
@@ -40,8 +45,12 @@ namespace ReBus.Serializer.XML.UnitTests
         {
             var testMessage = _fixture.Create<TestMessageWithProtectedSetters>();
             var message = new Message(new Dictionary<string, string>(), testMessage);
-
-            var transportMessage = await _sut
+            _options = new XmlSerializingOptions()
+            {
+                IncludeBaseTypeNamespaces = false
+            };
+            
+            var transportMessage = await Sut
                 .Serialize(message)
                 .ConfigureAwait(false);
 
@@ -59,6 +68,26 @@ namespace ReBus.Serializer.XML.UnitTests
                     $"<DateTimeProp>{JsonConvert.SerializeObject(testMessage.DateTimeProp).Replace("\"", "")}</DateTimeProp>" +
                     $"</{nameof(TestMessageWithProtectedSetters)}>" +
                     $"</Messages>"
+                );
+        }
+
+        [Fact]
+        public async Task when_passed_message_with_base_types__maps_to_xml_object_with_base_types_in_root_container()
+        {
+            var testMessage = _fixture.Create<TestMessageWithBaseTypes>();
+            var message = new Message(new Dictionary<string, string>(), testMessage);
+            _options = new XmlSerializingOptions();
+            
+            var transportMessage = await Sut
+                .Serialize(message)
+                .ConfigureAwait(false);
+
+            var result = transportMessage.Body;
+            var resultAsString = Encoding.UTF8.GetString(result);
+
+            resultAsString.Should()
+                .Contain(
+                    "xmlns:baseType=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.IAmImplementedInterface\" xmlns:baseType1=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.SubClass\" xmlns:baseType2=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.RootClass\""
                 );
         }
 
@@ -83,7 +112,7 @@ namespace ReBus.Serializer.XML.UnitTests
             };
             var message = new TransportMessage(headers, Encoding.Default.GetBytes(input));
 
-            var result = await _sut
+            var result = await Sut
                 .Deserialize(message)
                 .ConfigureAwait(false);
 

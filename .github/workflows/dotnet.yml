@@ -68,13 +68,10 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: nupkg
-      - name: Upload package to github feed
-        uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
-        with:
-          nupkg-path:  '${{ steps.download-artifact.outputs.download-path }}*.nupkg'
-          repo-owner:  'rafek1241'
-          gh-user:  'rafek1241'
-          token:  ${{ secrets.GITHUB_TOKEN }}
+      - name: Install gpr
+        run: dotnet tool install gpr --global
+      - name: gpr upload
+        run: find -name "*.nupkg" -print -exec gpr push -k ${{secrets.GITHUB_TOKEN}} {} \;
   deploy:
     needs: build
     if: github.event_name == 'release'

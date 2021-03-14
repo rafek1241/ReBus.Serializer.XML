@@ -3,6 +3,9 @@
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
         <LangVersion>default</LangVersion>
+        <PackageId>rebus-serializer-xml</PackageId>
+        <Authors>rafek1241</Authors>
+        <Company>rafek1241</Company>
     </PropertyGroup>
 
     <ItemGroup>

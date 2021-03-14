@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Rebus.Bus;
+using Rebus.Extensions;
 using Rebus.Messages;
 using Rebus.Serialization;
 using ReBus.Serializer.XML.Exceptions;
@@ -41,34 +42,85 @@ namespace ReBus.Serializer.XML
         
         public Task<TransportMessage> Serialize(Message message)
         {
-            var messageType = Type.GetType(message.GetMessageType());
-
             using var ms = new MemoryStream();
             using var xmlWriter = new XmlTextWriter(ms, _options.Encoding);
 
-            xmlWriter.WriteStartDocument();
-            
-            var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
-            xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
+            var messageType = Type.GetType(message.GetMessageType());
+            ComposeXmlMessage(message, xmlWriter, messageType);
+            xmlWriter.Flush();
 
-            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-            
+            var result = Encoding.ASCII.GetString(ms.ToArray());
+            _logger?.LogDebug("Serialized '{Type}' message to XML content: {Result}", messageType?.Name, result);
+
+            return Task.FromResult(new TransportMessage(message.Headers, ms.ToArray()));
+        }
+
+        private void ComposeXmlMessage(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
+            xmlWriter.WriteStartDocument();
+
+            WriteRootContainerElement(message, xmlWriter, messageType);
+            SerializeAndWriteXmlMessage(message, xmlWriter, messageType);
+
+            xmlWriter.WriteEndDocument();
+        }
+
+        private void SerializeAndWriteXmlMessage(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
             var messageBody = JsonConvert.SerializeObject(message.Body, _jsonSettings);
             var xmlObj = JsonConvert.DeserializeXmlNode(
                 messageBody,
                 messageType?.Name ?? throw new InvalidOperationException()
             );
-            
+
             xmlWriter.WriteRaw(xmlObj.InnerXml);
+        }
 
-            xmlWriter.WriteEndDocument();
-            xmlWriter.Flush();
+        private void WriteRootContainerElement(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
+            var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
+            xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
 
-            var result = Encoding.ASCII.GetString(ms.ToArray());
-            _logger?.LogDebug("Serialized '{Type}' message to XML content: {Result}", messageType.Name, result);
+            if (_options.IncludeBaseTypeNamespaces)
+            {
+                IncludeBaseTypesInElement(xmlWriter, messageType);
+            }
 
-            return Task.FromResult(new TransportMessage(message.Headers, ms.ToArray()));
+            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+        }
+
+        private void IncludeBaseTypesInElement(XmlTextWriter xmlWriter, Type messageType)
+        {
+            var baseTypes = messageType
+                .GetBaseTypes()
+                .Where(x => x != typeof(object))
+                .ToArray();
+
+            var firstBaseType = baseTypes.FirstOrDefault();
+            if (firstBaseType == null)
+            {
+                return;
+            }
+
+            xmlWriter.WriteAttributeString($"xmlns:{_options.BaseTypeNamespaceAttributeName}", firstBaseType.FullName!);
+
+            for (var i = 1; i < baseTypes.Length; i++)
+            {
+                xmlWriter.WriteAttributeString($"xmlns:{_options.BaseTypeNamespaceAttributeName}{i}", baseTypes[i].FullName!);
+            }
         }
 
         private string DefineNamespaceOfMessage(Message message, Type messageType)

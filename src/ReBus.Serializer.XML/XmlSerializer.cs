@@ -41,34 +41,59 @@ namespace ReBus.Serializer.XML
         
         public Task<TransportMessage> Serialize(Message message)
         {
-            var messageType = Type.GetType(message.GetMessageType());
-
             using var ms = new MemoryStream();
             using var xmlWriter = new XmlTextWriter(ms, _options.Encoding);
 
-            xmlWriter.WriteStartDocument();
-            
-            var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
-            xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
+            var messageType = Type.GetType(message.GetMessageType());
+            ComposeXmlMessage(message, xmlWriter, messageType);
+            xmlWriter.Flush();
 
-            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-            
+            var result = Encoding.ASCII.GetString(ms.ToArray());
+            _logger?.LogDebug("Serialized '{Type}' message to XML content: {Result}", messageType?.Name, result);
+
+            return Task.FromResult(new TransportMessage(message.Headers, ms.ToArray()));
+        }
+
+        private void ComposeXmlMessage(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
+            xmlWriter.WriteStartDocument();
+
+            WriteRootContainerElement(message, xmlWriter, messageType);
+            SerializeAndWriteXmlMessage(message, xmlWriter, messageType);
+
+            xmlWriter.WriteEndDocument();
+        }
+
+        private void SerializeAndWriteXmlMessage(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
             var messageBody = JsonConvert.SerializeObject(message.Body, _jsonSettings);
             var xmlObj = JsonConvert.DeserializeXmlNode(
                 messageBody,
                 messageType?.Name ?? throw new InvalidOperationException()
             );
-            
+
             xmlWriter.WriteRaw(xmlObj.InnerXml);
+        }
 
-            xmlWriter.WriteEndDocument();
-            xmlWriter.Flush();
+        private void WriteRootContainerElement(
+            Message message,
+            XmlTextWriter xmlWriter,
+            Type messageType
+        )
+        {
+            var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
+            xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
 
-            var result = Encoding.ASCII.GetString(ms.ToArray());
-            _logger?.LogDebug("Serialized '{Type}' message to XML content: {Result}", messageType.Name, result);
-
-            return Task.FromResult(new TransportMessage(message.Headers, ms.ToArray()));
+            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
         }
 
         private string DefineNamespaceOfMessage(Message message, Type messageType)

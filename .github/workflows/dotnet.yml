@@ -64,13 +64,14 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download Artifact
+        id: download-artifact
         uses: actions/download-artifact@v1
         with:
           name: nupkg
       - name: Upload package to github feed
         uses: tanaka-takayoshi/nuget-publish-to-github-packages-action@v2.1
         with:
-          nupkg-path:  './nupkg/*.nupkg'
+          nupkg-path:  '${{ steps.download-artifact.outputs.download-path }}/*.nupkg'
           repo-owner:  'rafek1241'
           gh-user:  'rafek1241'
           token:  ${{ secrets.GITHUB_TOKEN }}

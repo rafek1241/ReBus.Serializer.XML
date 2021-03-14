@@ -3,9 +3,17 @@
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
         <LangVersion>default</LangVersion>
+
+        <!-- NuGet settings -->
         <PackageId>rebus-serializer-xml</PackageId>
+        <PackageDescription>Provides an XML serializer for Rebus library</PackageDescription>
+        <PackageTags>rebus xml-serialization serialization xml</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageIcon>logo-200x200.png</PackageIcon>
+        <RepositoryType>git</RepositoryType>
         <Authors>rafek1241</Authors>
         <Company>rafek1241</Company>
+        <RepositoryUrl>https://github.com/rafek1241/ReBus.Serializer.XML/</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>

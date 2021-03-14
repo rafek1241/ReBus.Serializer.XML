@@ -5,7 +5,7 @@
         <LangVersion>default</LangVersion>
 
         <!-- NuGet settings -->
-        <PackageId>rebus-serializer-xml</PackageId>
+        <PackageId>Rebus.Serializer.XML</PackageId>
         <PackageDescription>Provides an XML serializer for Rebus library</PackageDescription>
         <PackageTags>rebus xml-serialization serialization xml</PackageTags>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

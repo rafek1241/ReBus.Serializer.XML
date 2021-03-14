@@ -50,11 +50,13 @@ jobs:
         run: dotnet build -c Release --no-restore
       - name: Test
         run: dotnet test -c Release
-      - name: GetVersion
-        id: version
-        uses: battila7/get-version-action@v2
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+      - name: Use tag
+        run: echo ${{steps.tag.outputs.tag}}
       - name: Pack
-        run: dotnet pack -v normal -c Release --no-restore --no-build --include-symbols --include-source -p:PackageVersion=${{ steps.version.outputs.version-without-v }} src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
+        run: dotnet pack -v normal -c Release --no-restore --no-build --include-symbols --include-source -p:PackageVersion=${{steps.tag.outputs.tag}} src/${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:

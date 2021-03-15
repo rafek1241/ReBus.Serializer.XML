@@ -1,6 +1,7 @@
 # XML Serializer for ReBus
-
-[![.NET Core](https://github.com/rafek1241/ReBus.Serializer.XML/actions/workflows/dotnet.yml/badge.svg)](https://github.com/rafek1241/ReBus.Serializer.XML/actions/workflows/dotnet.yml)
+![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/rafek1241/ReBus.Serializer.XML?include_prereleases&logo=github&style=for-the-badge)
+![Nuget](https://img.shields.io/nuget/v/ReBus.Serializer.XML?color=blue&style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/rafek1241/Rebus.Serializer.XML?style=for-the-badge)
 
 ## Why it was created?
 

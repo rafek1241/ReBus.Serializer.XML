@@ -1,7 +1,7 @@
 # XML Serializer for ReBus
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/rafek1241/ReBus.Serializer.XML?include_prereleases&logo=github&style=for-the-badge)
-![Nuget](https://img.shields.io/nuget/v/ReBus.Serializer.XML?color=blue&style=for-the-badge)
-![GitHub](https://img.shields.io/github/license/rafek1241/Rebus.Serializer.XML?style=for-the-badge)
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/rafek1241/ReBus.Serializer.XML?include_prereleases&logo=github&style=for-the-badge)](https://github.com/rafek1241/ReBus.Serializer.XML/packages)
+[![Nuget](https://img.shields.io/nuget/v/ReBus.Serializer.XML?color=blue&style=for-the-badge)](https://www.nuget.org/packages/ReBus.Serializer.XML)
+[![GitHub](https://img.shields.io/github/license/rafek1241/Rebus.Serializer.XML?style=for-the-badge)](https://github.com/rafek1241/ReBus.Serializer.XML/blob/master/LICENSE)
 
 ## Why it was created?
 

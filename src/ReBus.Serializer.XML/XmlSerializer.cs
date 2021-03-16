@@ -91,15 +91,16 @@ namespace ReBus.Serializer.XML
         )
         {
             var namespaceOfMessage = DefineNamespaceOfMessage(message, messageType);
-            xmlWriter.WriteStartElement(_options.RootName, namespaceOfMessage);
+            xmlWriter.WriteStartElement(_options.RootName);
+
+            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+            xmlWriter.WriteAttributeString("xmlns", namespaceOfMessage);
 
             if (_options.IncludeBaseTypeNamespaces)
             {
                 IncludeBaseTypesInElement(xmlWriter, messageType);
             }
-
-            xmlWriter.WriteAttributeString("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-            xmlWriter.WriteAttributeString("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
         }
 
         private void IncludeBaseTypesInElement(XmlTextWriter xmlWriter, Type messageType)

@@ -8,12 +8,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1-Library", "1-Library", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReBus.Serializer.XML.UnitTests", "tests\ReBus.Serializer.XML.UnitTests\ReBus.Serializer.XML.UnitTests.csproj", "{70785EF6-3B5B-4415-9D37-B0FDE3D1C20B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "build", "build\build.csproj", "{50F79DFA-8148-4A01-A16B-96F8646F929A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{50F79DFA-8148-4A01-A16B-96F8646F929A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50F79DFA-8148-4A01-A16B-96F8646F929A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{302F0123-2FB1-49A1-8AAE-D257C00CEF7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{302F0123-2FB1-49A1-8AAE-D257C00CEF7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{302F0123-2FB1-49A1-8AAE-D257C00CEF7B}.Release|Any CPU.ActiveCfg = Release|Any CPU

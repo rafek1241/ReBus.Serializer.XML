@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Execution;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
@@ -17,6 +18,14 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 [CheckBuildProjectConfigurations]
 [ShutdownDotNetAfterServerBuild]
+[GitHubActions("continous-integration",
+    GitHubActionsImage.UbuntuLatest,
+    AutoGenerate = true,
+    OnPushBranches = new[] { "master" },
+    OnPullRequestBranches= new[] { "*" },
+    InvokedTargets = new[] { nameof(ContinousIntegration) },
+    ImportSecrets = new[] { nameof(NugetApiKey) }
+)]
 class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -24,11 +33,13 @@ class Build : NukeBuild
     ///   - JetBrains Rider            https://nuke.build/rider
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
-
-    public static int Main () => Execute<Build>(x => x.Compile);
+    public static int Main() => Execute<Build>(x => x.Compile);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+
+    [Parameter] string NugetApiUrl = "https://api.nuget.org/v3/index.json"; //default
+    [Parameter] string NugetApiKey;
 
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
@@ -37,34 +48,97 @@ class Build : NukeBuild
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
+    AbsolutePath NugetDestinationDirectory => ArtifactsDirectory / "nuget";
+    AbsolutePath TestsResultDirectory => ArtifactsDirectory / "tests";
 
     Target Clean => _ => _
         .Before(Restore)
         .Executes(() =>
-        {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-            TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-            EnsureCleanDirectory(ArtifactsDirectory);
-        });
+            {
+                SourceDirectory.GlobDirectories("**/bin", "**/obj")
+                    .ForEach(DeleteDirectory);
+                TestsDirectory.GlobDirectories("**/bin", "**/obj")
+                    .ForEach(DeleteDirectory);
+                EnsureCleanDirectory(ArtifactsDirectory);
+            }
+        );
 
     Target Restore => _ => _
         .Executes(() =>
-        {
-            DotNetRestore(s => s
-                .SetProjectFile(Solution));
-        });
+            {
+                DotNetRestore(s => s
+                    .SetProjectFile(Solution)
+                );
+            }
+        );
 
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
-        {
-            DotNetBuild(s => s
-                .SetProjectFile(Solution)
-                .SetConfiguration(Configuration)
-                .SetAssemblyVersion(GitVersion.AssemblySemVer)
-                .SetFileVersion(GitVersion.AssemblySemFileVer)
-                .SetInformationalVersion(GitVersion.InformationalVersion)
-                .EnableNoRestore());
-        });
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(Solution)
+                    .SetConfiguration(Configuration)
+                    .SetAssemblyVersion(GitVersion.AssemblySemVer)
+                    .SetFileVersion(GitVersion.AssemblySemFileVer)
+                    .SetInformationalVersion(GitVersion.InformationalVersion)
+                    .EnableNoRestore()
+                );
+            }
+        );
 
+    Target Test => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+            {
+                DotNetTest(s => s
+                    .SetProjectFile(TestsDirectory)
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetResultsDirectory(TestsResultDirectory)
+                );
+            }
+        );
+
+    Target Pack => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+            {
+                DotNetPack(s => s
+                    .SetProject(Solution)
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild()
+                    .EnableNoRestore()
+                    .SetVersion(GitVersion.NuGetVersionV2)
+                    .SetOutputDirectory(NugetDestinationDirectory)
+                );
+            }
+        );
+
+    Target Deploy => _ => _
+        .DependsOn(Pack)
+        .OnlyWhenStatic(() => GitRepository.Branch == "refs/heads/master")
+        .Requires(() => NugetApiUrl)
+        .Requires(() => NugetApiKey)
+        .Requires(() => Configuration.Equals(Configuration.Release))
+        .Executes(() =>
+            {
+                GlobFiles(NugetDestinationDirectory, "*.nupkg")
+                    .NotEmpty()
+                    .Where(x => !x.EndsWith("symbols.nupkg"))
+                    .ForEach(x =>
+                        {
+                            DotNetNuGetPush(s => s
+                                .SetSource(NugetApiUrl)
+                                .SetApiKey(NugetApiKey)
+                                .SetSkipDuplicate(true)
+                            );
+                        }
+                    );
+            }
+        );
+
+    Target ContinousIntegration => _ => _
+        .DependsOn(Deploy);
 }

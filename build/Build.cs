@@ -21,8 +21,8 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 [GitHubActions("continous-integration",
     GitHubActionsImage.UbuntuLatest,
     AutoGenerate = true,
-    OnPushBranches = new[] { "master" },
-    OnPullRequestBranches= new[] { "*" },
+    OnPushBranches = new[] { "master","feature/*" },
+    OnPullRequestBranches = new[] { "master" },
     InvokedTargets = new[] { nameof(ContinousIntegration) },
     ImportSecrets = new[] { nameof(NugetApiKey) }
 )]

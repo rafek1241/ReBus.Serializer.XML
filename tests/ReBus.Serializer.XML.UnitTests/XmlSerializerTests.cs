@@ -87,7 +87,7 @@ namespace ReBus.Serializer.XML.UnitTests
 
             resultAsString.Should()
                 .Contain(
-                    "xmlns:baseType=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.IAmImplementedInterface\" xmlns:baseType1=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.SubClass\" xmlns:baseType2=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.RootClass\""
+                    "xmlns=\"http://tempuri.org/ReBus.Serializer.XML.UnitTests.Messages.BaseTypes\" xmlns:baseType=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.IAmImplementedInterface\" xmlns:baseType1=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.SubClass\" xmlns:baseType2=\"ReBus.Serializer.XML.UnitTests.Messages.BaseTypes.RootClass\""
                 );
         }
 

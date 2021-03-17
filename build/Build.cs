@@ -27,7 +27,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
     OnPushBranches = new[] { "master","feature/*" },
     OnPullRequestBranches = new[] { "master" },
     InvokedTargets = new[] { nameof(ContinousIntegration) },
-    ImportSecrets = new[] { nameof(NugetApiKey) },
+    ImportSecrets = new[] { nameof(NugetApiKey), GithubTokenSecretName },
     PublishArtifacts = true
 )]
 class Build : NukeBuild
@@ -37,6 +37,9 @@ class Build : NukeBuild
     ///   - JetBrains Rider            https://nuke.build/rider
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
+    
+    const string GithubTokenSecretName = "GITHUB_TOKEN";
+    
     public static int Main() => Execute<Build>(x => x.Compile);
 
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
@@ -44,7 +47,7 @@ class Build : NukeBuild
 
     [Parameter] string NugetApiUrl = "https://api.nuget.org/v3/index.json"; //default
     [Parameter] string NugetApiKey;
-    [Parameter] string GitHubAuthenticationToken;
+    [Parameter(Name = GithubTokenSecretName)] string GitHubAuthenticationToken;
     
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;

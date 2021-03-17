@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.CI.GitHubActions;
@@ -56,6 +57,7 @@ class Build : NukeBuild
         .Before(Restore)
         .Executes(() =>
             {
+                Console.WriteLine(JsonConvert.SerializeObject(GitRepository));
                 SourceDirectory.GlobDirectories("**/bin", "**/obj")
                     .ForEach(DeleteDirectory);
                 TestsDirectory.GlobDirectories("**/bin", "**/obj")
@@ -93,17 +95,16 @@ class Build : NukeBuild
         .Executes(() =>
             {
                 DotNetTest(s => s
-                    .SetProjectFile(TestsDirectory)
+                    .SetProjectFile(Solution)
                     .SetConfiguration(Configuration)
                     .EnableNoBuild()
                     .EnableNoRestore()
-                    .SetResultsDirectory(TestsResultDirectory)
                 );
             }
         );
 
     Target Pack => _ => _
-        .DependsOn(Compile)
+        .DependsOn(Test)
         .Produces(NugetDestinationDirectory / "*.nupkg")
         .Executes(() =>
             {
@@ -112,12 +113,21 @@ class Build : NukeBuild
                     .SetConfiguration(Configuration)
                     .EnableNoBuild()
                     .EnableNoRestore()
+                    .SetIncludeSymbols(true)
                     .SetVersion(GitVersion.NuGetVersionV2)
                     .SetOutputDirectory(NugetDestinationDirectory)
                 );
             }
         );
 
+    Target DeployToGithubPackage => _ => _
+        .DependsOn(Pack)
+        .Executes(() =>
+            {
+                
+            }
+        );
+    
     Target Deploy => _ => _
         .DependsOn(Pack)
         .OnlyWhenStatic(() => GitRepository.Branch == "refs/heads/master")
@@ -132,6 +142,7 @@ class Build : NukeBuild
                     .ForEach(x =>
                         {
                             DotNetNuGetPush(s => s
+                                .SetTargetPath(x)
                                 .SetSource(NugetApiUrl)
                                 .SetApiKey(NugetApiKey)
                                 .SetSkipDuplicate(true)
@@ -142,5 +153,8 @@ class Build : NukeBuild
         );
 
     Target ContinousIntegration => _ => _
+        .DependsOn(Clean);
+
+    Target ContinousDeployment => _ => _
         .DependsOn(Deploy);
 }

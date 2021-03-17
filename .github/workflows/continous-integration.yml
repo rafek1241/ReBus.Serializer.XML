@@ -35,3 +35,7 @@ jobs:
         run: ./build.cmd ContinousIntegration
         env:
             NugetApiKey: ${{ secrets.NugetApiKey }}
+      - uses: actions/upload-artifact@v1
+        with:
+          name: nuget
+          path: artifacts/nuget

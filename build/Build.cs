@@ -130,7 +130,7 @@ class Build : NukeBuild
     
     Target Deploy => _ => _
         .DependsOn(Pack)
-        .OnlyWhenStatic(() => GitRepository.Branch == "refs/heads/master")
+        .OnlyWhenStatic(() => GitRepository.Branch == "master")
         .Requires(() => NugetApiUrl)
         .Requires(() => NugetApiKey)
         .Requires(() => Configuration.Equals(Configuration.Release))
@@ -153,8 +153,5 @@ class Build : NukeBuild
         );
 
     Target ContinousIntegration => _ => _
-        .DependsOn(Clean);
-
-    Target ContinousDeployment => _ => _
         .DependsOn(Deploy);
 }

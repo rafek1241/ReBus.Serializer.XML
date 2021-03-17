@@ -1,0 +1,8 @@
+ignore:
+  sha: []
+merge-message-formats: {}
+tag-prefix: ''
+branches: 
+  feature:
+    increment: Minor
+    tag: alpha

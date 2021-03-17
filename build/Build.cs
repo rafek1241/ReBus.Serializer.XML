@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI;
@@ -12,6 +13,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.GitVersion;
 using Nuke.Common.Utilities.Collections;
+using Nuke.GitHub;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
@@ -42,7 +44,8 @@ class Build : NukeBuild
 
     [Parameter] string NugetApiUrl = "https://api.nuget.org/v3/index.json"; //default
     [Parameter] string NugetApiKey;
-
+    [Parameter] string GitHubAuthenticationToken;
+    
     [Solution] readonly Solution Solution;
     [GitRepository] readonly GitRepository GitRepository;
     [GitVersion(Framework = "netcoreapp3.1")] readonly GitVersion GitVersion;
@@ -120,17 +123,9 @@ class Build : NukeBuild
             }
         );
 
-    Target DeployToGithubPackage => _ => _
-        .DependsOn(Pack)
-        .Executes(() =>
-            {
-                
-            }
-        );
-    
     Target Deploy => _ => _
         .DependsOn(Pack)
-        .OnlyWhenStatic(() => GitRepository.Branch == "master")
+        .OnlyWhenStatic(() => GitRepository.IsOnMasterBranch())
         .Requires(() => NugetApiUrl)
         .Requires(() => NugetApiKey)
         .Requires(() => Configuration.Equals(Configuration.Release))
@@ -152,6 +147,33 @@ class Build : NukeBuild
             }
         );
 
+    Target PublishGithubRelease => _ => _
+        .DependsOn(Deploy)
+        .OnlyWhenStatic(() => GitRepository.IsOnMasterBranch())
+        .Requires(() => GitHubAuthenticationToken)
+        .Requires(() => Configuration.Equals(Configuration.Release))
+        .Executes(async () =>
+            {
+                var releaseTag = GitVersion.MajorMinorPatch;
+                var nugets = GlobFiles(NugetDestinationDirectory, "*.nupkg")
+                    .NotEmpty()
+                    .Where(x => !x.EndsWith("symbols.nupkg"))
+                    .ToArray();
+
+                var repo = GitHubTasks.GetGitHubRepositoryInfo(GitRepository);
+
+                await GitHubTasks
+                    .PublishRelease(s => s
+                        .SetArtifactPaths(nugets)
+                        .SetCommitSha(GitVersion.Sha)
+                        .SetTag(releaseTag)
+                        .SetRepositoryName(repo.repositoryName)
+                        .SetRepositoryOwner(repo.gitHubOwner)
+                        .SetToken(GitHubAuthenticationToken)
+                    );
+            }
+        );
+
     Target ContinousIntegration => _ => _
-        .DependsOn(Deploy);
+        .DependsOn(PublishGithubRelease);
 }
